@@ -70,7 +70,7 @@ function normalize(n) {
   const pub = scalar(n['publication-number']);
   // Canonical deep-link to THIS specific notice (not the homepage). The notice
   // page is the official record and links onward to the buyer's tender docs.
-  const url = pub ? `https://ted.europa.eu/en/notice/${pub}` : null;
+  const url = pub ? `https://ted.europa.eu/en/notice/-/detail/${pub}` : null;
   return {
     source: 'ted',
     source_uid: pub,
