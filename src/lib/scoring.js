@@ -87,7 +87,7 @@ function kwHits(haystack, words) {
 // Main entry. opp = normalised opportunity { title, buyer, notice_type,
 // cpv:[], est_value, deadline_at, ... }. Returns { score, tier, signals, is_major }.
 export function scoreOpportunity(opp) {
-  const text = [opp.title, opp.buyer, opp.notice_type].filter(Boolean).join(' · ');
+  const text = [opp.title, opp.buyer, opp.notice_type, opp.description].filter(Boolean).join(' · ');
   const signals = [];
   let score = 0;
 
