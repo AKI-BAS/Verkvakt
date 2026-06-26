@@ -9,7 +9,7 @@ crons = ["0 */6 * * *"]
 
 # Non-secret config. Set your project URL here.
 [vars]
-SUPABASE_URL = "https://YOUR-PROJECT.supabase.co"
+SUPABASE_URL = "https://eghjeemcfreihhzdbnnc.supabase.co"
 
 # SUPABASE_SERVICE_KEY is a SECRET — never put it here. Set it once with:
 #   npx wrangler secret put SUPABASE_SERVICE_KEY

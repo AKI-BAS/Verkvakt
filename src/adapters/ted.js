@@ -13,7 +13,7 @@ const TED_ENDPOINT = 'https://api.ted.europa.eu/v3/notices/search';
 
 // ── Query knobs. If TED ever rejects the query, these field names are the
 //    first thing to check against https://ted.europa.eu/expert-search ──
-const COUNTRY = 'ISL'; // Iceland, TED 3-letter code (cf. LUX for Luxembourg)
+const COUNTRY = 'ISL';
 
 // CPV families to pull at the QUERY level (coarse filter). The scorer refines
 // afterwards. A main code matches its sub-codes automatically in TED.
@@ -90,7 +90,7 @@ function normalize(n) {
 
 // Fetch all matching notices published in the last `sinceDays` days.
 // Returns an array of normalised opportunities (un-scored).
-export async function fetchTed({ sinceDays = 14 } = {}) {
+export async function fetchTed({ sinceDays = 30 } = {}) {
   const out = [];
   let page = 1;
   const limit = 100;

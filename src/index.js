@@ -11,7 +11,7 @@ import { scoreOpportunity } from './lib/scoring.js';
 import { upsertOpportunities, logRun } from './lib/supabase.js';
 
 const ADAPTERS = [
-  { name: 'ted',          run: () => fetchTed({ sinceDays: 14 }) },
+  { name: 'ted',          run: () => fetchTed({ sinceDays: 30 }) },
   { name: 'competitions', run: () => fetchCompetitions() },
 ];
 
