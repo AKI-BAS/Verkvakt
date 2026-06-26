@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="light dark" />
+<title>Verkvakt — opportunity radar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    color-scheme:light dark;
+    --paper:#FAFAF7; --ink:#18181B; --muted:#76766C; --faint:#9A9A90;
+    --line:#E6E5DE; --line2:#EFEEE8; --accent:#2E4A66; --urgent:#A33C2A;
+    --hi:#2E4A66; --field:#fff;
+    --demo-bg:#fbf5e6; --demo-fg:#7a5a16; --demo-br:#ecddb5;
+    --hover:rgba(46,74,102,.04);
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --paper:#15161A; --ink:#ECEBE4; --muted:#9C9C92; --faint:#6B6C66;
+      --line:#2B2C32; --line2:#212229; --accent:#86A9CE; --urgent:#E1836A;
+      --hi:#86A9CE; --field:#1D1E24;
+      --demo-bg:#241f12; --demo-fg:#d8b878; --demo-br:#43391f;
+      --hover:rgba(134,169,206,.06);
+    }
+  }
+  html{background:var(--paper)}
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:Archivo,system-ui,sans-serif;
+    font-size:16px; line-height:1.45;
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+  .wrap{max-width:1080px; margin:0 auto; padding:0 24px}
+
+  /* ── header ── */
+  header{border-bottom:1px solid var(--ink); position:sticky; top:0; background:var(--paper); z-index:5}
+  .masthead{display:flex; align-items:baseline; justify-content:space-between; gap:16px; padding:22px 0 14px}
+  .brand{display:flex; align-items:baseline; gap:14px}
+  .brand h1{font-size:21px; font-weight:600; letter-spacing:-.02em; margin:0}
+  .brand .sub{font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted)}
+  .summary{font-size:12px; letter-spacing:.04em; color:var(--muted); text-align:right}
+  .summary b{color:var(--ink); font-weight:500}
+  .summary .u{color:var(--urgent)}
+
+  /* ── controls ── */
+  .controls{display:flex; flex-wrap:wrap; gap:10px; align-items:center; padding:12px 0 16px}
+  .controls input[type=search]{
+    flex:1; min-width:180px; font:inherit; font-size:14px; padding:9px 12px;
+    border:1px solid var(--line); background:var(--field); border-radius:2px; color:var(--ink);
+  }
+  .controls input[type=search]:focus{outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent)}
+  .seg{display:flex; border:1px solid var(--line); border-radius:2px; overflow:hidden; background:var(--field)}
+  .seg button{
+    font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.05em; text-transform:uppercase;
+    padding:8px 11px; border:0; background:transparent; color:var(--muted); cursor:pointer; border-right:1px solid var(--line);
+  }
+  .seg button:last-child{border-right:0}
+  .seg button[aria-pressed=true]{background:var(--ink); color:var(--paper)}
+  .seg button:focus-visible{outline:2px solid var(--accent); outline-offset:-2px}
+
+  /* ── list ── */
+  .list{padding:0 0 80px}
+  .row{
+    display:grid; grid-template-columns:auto 1fr auto; gap:18px; align-items:start;
+    padding:18px 0 17px; border-bottom:1px solid var(--line2); position:relative;
+  }
+  .row:hover{background:linear-gradient(90deg, var(--hover), transparent 60%)}
+  /* signature: relevance marker — three stacked ticks, filled by tier */
+  .mark{display:flex; flex-direction:column; gap:3px; width:14px; padding-top:5px}
+  .mark i{height:8px; width:14px; background:var(--line); border:1px solid var(--line); display:block}
+  .mark[data-tier=low] i:nth-child(1){background:var(--faint);border-color:var(--faint)}
+  .mark[data-tier=medium] i:nth-child(1),
+  .mark[data-tier=medium] i:nth-child(2){background:var(--muted);border-color:var(--muted)}
+  .mark[data-tier=high] i{background:var(--hi);border-color:var(--hi)}
+  .mark[data-tier=excluded] i{background:transparent;border-color:var(--line)}
+
+  .main h2{font-size:17px; font-weight:500; line-height:1.3; margin:0 0 6px; letter-spacing:-.01em}
+  .main h2 a{color:inherit; text-decoration:none}
+  .main h2 a:hover{text-decoration:underline; text-decoration-color:var(--accent); text-underline-offset:3px}
+  .meta{font-size:11.5px; letter-spacing:.03em; color:var(--muted); display:flex; flex-wrap:wrap; gap:8px}
+  .meta .tag{text-transform:uppercase}
+  .meta .src{color:var(--accent)}
+  .meta .dot{color:var(--line)}
+  .badge{display:inline-block; font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--urgent); border:1px solid var(--urgent); border-radius:2px; padding:1px 5px; margin-left:2px}
+
+  .end{text-align:right; min-width:96px; padding-top:2px}
+  .val{font-size:13px; font-weight:500; letter-spacing:.01em}
+  .val.none{color:var(--faint); font-weight:400}
+  .dl{font-size:11px; color:var(--muted); margin-top:4px}
+  .dl b{font-weight:500; color:var(--ink)}
+  .dl.soon b{color:var(--urgent)}
+  .dl.open{color:var(--faint)}
+
+  /* ── states ── */
+  .state{padding:64px 0; text-align:center; color:var(--muted)}
+  .state h3{font-weight:500; color:var(--ink); margin:0 0 6px}
+  .demo{font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.04em; text-transform:uppercase;
+    color:var(--demo-fg); background:var(--demo-bg); border:1px solid var(--demo-br); border-radius:2px; padding:6px 10px; margin:14px 0 0; display:inline-block}
+  footer{border-top:1px solid var(--line); color:var(--faint); font-size:11px; letter-spacing:.04em; padding:18px 0 40px}
+
+  @media (max-width:620px){
+    .row{grid-template-columns:auto 1fr; gap:12px}
+    .end{grid-column:2; text-align:left; margin-top:8px; display:flex; gap:16px; align-items:baseline}
+    .dl{margin-top:0}
+    .masthead{flex-direction:column; align-items:flex-start; gap:6px}
+    .summary{text-align:left}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="masthead">
+      <div class="brand">
+        <h1>Verkvakt</h1>
+        <span class="sub">opportunity radar</span>
+      </div>
+      <div class="summary" id="summary">loading…</div>
+    </div>
+    <div class="controls">
+      <input type="search" id="q" placeholder="Filter by title, buyer, CPV…" aria-label="Filter opportunities">
+      <div class="seg" id="srcSeg" role="group" aria-label="Source">
+        <button data-src="all" aria-pressed="true">All</button>
+        <button data-src="ted">TED</button>
+        <button data-src="competitions">Comp</button>
+        <button data-src="utbodsvefur">Útboð</button>
+      </div>
+      <div class="seg" id="tierSeg" role="group" aria-label="Minimum relevance">
+        <button data-tier="all" aria-pressed="true">Any</button>
+        <button data-tier="medium">Med+</button>
+        <button data-tier="high">High</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="list" id="list"></div>
+  <footer id="foot"></footer>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ── CONFIG ───────────────────────────────────────────────────────────────
+// Fill these in once Supabase is set up. Until then, the dashboard runs on
+// bundled sample data so you can see the layout immediately.
+const SUPABASE_URL  = "";   // e.g. "https://abcd.supabase.co"
+const SUPABASE_ANON = "";   // the public anon key (safe to expose; read-only via RLS)
+
+// ── sample data (clearly marked) so the page is alive before the DB is wired ─
+const SAMPLE = [
+  { source:'competitions', title:'Hönnunarsamkeppni um endurhönnun Grófarhúss – framtíðarbókasafn miðborgarinnar',
+    buyer:'Reykjavíkurborg', cpv:['71200000'], notice_type:'competition',
+    url:'https://reykjavik.is/en/grofarhus', deadline_at:daysFromNow(9), est_value:null, tier:'high', score:72, is_major:true,
+    signals:['cpv+ 71200000','competition'] },
+  { source:'ted', title:'Iceland-Reykjavík: Architectural and related services — new upper-secondary school',
+    buyer:'Framkvæmdasýslan – Ríkiseignir (FSRE)', cpv:['71221000','71240000'], notice_type:'pin',
+    url:'https://ted.europa.eu/en/notice/88826-2021', deadline_at:daysFromNow(41), est_value:180000000, tier:'high', score:68, is_major:true,
+    signals:['cpv+ 71221000,71240000','value≥50M'] },
+  { source:'competitions', title:'Forval – þverfagleg teymi, uppbygging og skipulag átta byggingarreita við sjávarsíðuna',
+    buyer:'Fasteignaþróunarfélagið Spilda ehf', cpv:[], notice_type:'competition',
+    url:'https://fila.is/category/samkeppnir/asamkeppnir/', deadline_at:daysFromNow(23), est_value:null, tier:'high', score:58,
+    signals:['kw+ skipulag,forval','competition'] },
+  { source:'utbodsvefur', title:'Innanhússhönnun og rýmisskipulag — endurnýjun skrifstofuhúsnæðis',
+    buyer:'Sveitarfélag', cpv:['79932000'], notice_type:'contract',
+    url:'https://utbodsvefur.is', deadline_at:daysFromNow(5), est_value:14000000, tier:'medium', score:34,
+    signals:['cpv+ 79932000','kw+ innanhúss','closing≤7d'] },
+  { source:'ted', title:'Iceland-Akureyri: Landscape architectural services — public realm masterplan',
+    buyer:'Akureyrarbær', cpv:['71400000'], notice_type:'cn-standard',
+    url:'https://ted.europa.eu/en/notice/-/detail/408098-2021', deadline_at:daysFromNow(31), est_value:42000000, tier:'medium', score:48,
+    signals:['cpv+ 71400000','kw+ landslag'] },
+  { source:'utbodsvefur', title:'Raflagnahönnun og endurnýjun raflagna í eldra mannvirki',
+    buyer:'Ríkisstofnun', cpv:['45310000'], notice_type:'contract',
+    url:'https://utbodsvefur.is', deadline_at:daysFromNow(18), est_value:60000000, tier:'excluded', score:-22,
+    signals:['cpv- 45310000','kw- raflagnir'] },
+];
+
+function daysFromNow(n){ return new Date(Date.now()+n*86400000).toISOString(); }
+
+// ── state ──
+let DATA = [];
+let DEMO = false;
+const filters = { q:'', src:'all', tier:'all' };
+const TIER_RANK = { excluded:0, low:1, medium:2, high:3 };
+
+async function load(){
+  if (SUPABASE_URL && SUPABASE_ANON && window.supabase){
+    try {
+      const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+      const { data, error } = await db.from('v_open_opportunities').select('*');
+      if (error) throw error;
+      DATA = data || [];
+      render();
+      return;
+    } catch (e){
+      renderError(e.message || String(e));
+      return;
+    }
+  }
+  DEMO = true; DATA = SAMPLE; render();
+}
+
+function fmtVal(v){
+  if (!v) return {txt:'—', none:true};
+  if (v >= 1_000_000) return {txt:(v/1_000_000).toFixed(v>=10_000_000?0:1)+'M kr'};
+  return {txt:Math.round(v/1000)+'k kr'};
+}
+function deadline(iso){
+  if (!iso) return {txt:'open', cls:'open'};
+  const d = Math.ceil((new Date(iso)-Date.now())/86400000);
+  if (d < 0) return {txt:'closed', cls:'open'};
+  return {txt:`<b>${d}</b> day${d===1?'':'s'}`, cls: d<=7?'soon':''};
+}
+function esc(s){ return (s||'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+const SRC_LABEL = { ted:'TED', competitions:'Competition', utbodsvefur:'Útboðsvefur' };
+
+function passes(o){
+  if (filters.src!=='all' && o.source!==filters.src) return false;
+  if (filters.tier!=='all' && TIER_RANK[o.tier] < TIER_RANK[filters.tier]) return false;
+  if (filters.q){
+    const hay = (o.title+' '+(o.buyer||'')+' '+(o.cpv||[]).join(' ')).toLowerCase();
+    if (!hay.includes(filters.q.toLowerCase())) return false;
+  }
+  return true;
+}
+
+function render(){
+  const rows = DATA.filter(passes).sort((a,b)=>
+    (b.is_major?1:0)-(a.is_major?1:0) || b.score-a.score);
+
+  const open = DATA.length;
+  const soon = DATA.filter(o=>{const dl=deadline(o.deadline_at); return dl.cls==='soon';}).length;
+  document.getElementById('summary').innerHTML =
+    `<b>${open}</b> open` + (soon?` · <span class="u">${soon} closing this week</span>`:'');
+
+  const list = document.getElementById('list');
+  if (!rows.length){
+    list.innerHTML = `<div class="state"><h3>Nothing matches these filters</h3>
+      <div>Loosen the source or relevance filter to see more.</div></div>`;
+    return setFoot();
+  }
+
+  list.innerHTML = rows.map(o=>{
+    const v = fmtVal(o.est_value), dl = deadline(o.deadline_at);
+    const cpv = (o.cpv||[]).slice(0,2).join(' · ');
+    return `<article class="row">
+      <div class="mark" data-tier="${o.tier}" title="relevance: ${o.tier} (${o.score})">
+        <i></i><i></i><i></i>
+      </div>
+      <div class="main">
+        <h2><a href="${esc(o.url)||'#'}" target="_blank" rel="noopener">${esc(o.title)}</a>${o.is_major?'<span class="badge">major</span>':''}</h2>
+        <div class="meta mono">
+          <span class="src tag">${SRC_LABEL[o.source]||o.source}</span>
+          ${o.buyer?`<span class="dot">/</span><span>${esc(o.buyer)}</span>`:''}
+          ${cpv?`<span class="dot">/</span><span>${esc(cpv)}</span>`:''}
+          ${o.notice_type?`<span class="dot">/</span><span class="tag">${esc(o.notice_type)}</span>`:''}
+        </div>
+      </div>
+      <div class="end mono">
+        <div class="val ${v.none?'none':''}">${v.txt}</div>
+        <div class="dl ${dl.cls}">${dl.txt}</div>
+      </div>
+    </article>`;
+  }).join('');
+  setFoot(rows.length);
+}
+
+function setFoot(shown){
+  const f = document.getElementById('foot');
+  const stamp = new Date().toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+  f.innerHTML = (DEMO ? `<span class="demo">Sample data — add Supabase keys in index.html to go live</span><br><br>`:'')
+    + `${shown!=null?shown+' shown · ':''}updated ${stamp}`;
+}
+
+function renderError(msg){
+  document.getElementById('summary').textContent = 'connection error';
+  document.getElementById('list').innerHTML =
+    `<div class="state"><h3>Couldn't reach the database</h3>
+     <div>${esc(msg)}</div>
+     <div style="margin-top:10px">Check SUPABASE_URL and the anon key, and that RLS allows anon select.</div></div>`;
+}
+
+// ── wire controls ──
+document.getElementById('q').addEventListener('input', e=>{ filters.q=e.target.value; render(); });
+for (const seg of ['srcSeg','tierSeg']){
+  const key = seg==='srcSeg'?'src':'tier', attr='data-'+key;
+  document.getElementById(seg).addEventListener('click', e=>{
+    const b=e.target.closest('button'); if(!b) return;
+    filters[key]=b.getAttribute(attr);
+    [...e.currentTarget.children].forEach(x=>x.setAttribute('aria-pressed', x===b));
+    render();
+  });
+}
+
+load();
+</script>
+</body>
+</html>

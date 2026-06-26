@@ -1,0 +1,16 @@
+name = "verkvakt-worker"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+
+# Poll every 6 hours. TED publishes daily; útboðsvefur emails are a daily batch,
+# so 6h keeps you fresh without hammering anything.
+[triggers]
+crons = ["0 */6 * * *"]
+
+# Non-secret config. Set your project URL here.
+[vars]
+SUPABASE_URL = "https://YOUR-PROJECT.supabase.co"
+
+# SUPABASE_SERVICE_KEY is a SECRET — never put it here. Set it once with:
+#   npx wrangler secret put SUPABASE_SERVICE_KEY
+# (paste the service_role key from Supabase → Project Settings → API)
