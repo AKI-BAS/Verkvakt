@@ -142,10 +142,10 @@
         <button data-src="competitions">Comp</button>
         <button data-src="utbodsvefur">Útboð</button>
       </div>
-      <div class="seg" id="tierSeg" role="group" aria-label="Minimum relevance">
-        <button data-tier="all" aria-pressed="true">Any</button>
-        <button data-tier="medium">Med+</button>
-        <button data-tier="high">High</button>
+     <div class="seg" id="kindSeg" role="group" aria-label="Type">
+        <button data-kind="opportunity" aria-pressed="true">Opportunities</button>
+        <button data-kind="news">News</button>
+        <button data-kind="all">All</button>
       </div>
     </div>
   </div>
@@ -200,7 +200,7 @@ function daysFromNow(n){ return new Date(Date.now()+n*86400000).toISOString(); }
 // ── state ──
 let DATA = [];
 let DEMO = false;
-const filters = { q:'', src:'all', tier:'all' };
+const filters = { q:'', src:'all', tier:'all', kind:'opportunity' };
 const TIER_RANK = { excluded:0, low:1, medium:2, high:3 };
 
 async function load(){
@@ -237,6 +237,7 @@ const SRC_LABEL = { ted:'TED', competitions:'Competition', utbodsvefur:'Útboðs
 function passes(o){
   if (filters.src!=='all' && o.source!==filters.src) return false;
   if (filters.tier!=='all' && TIER_RANK[o.tier] < TIER_RANK[filters.tier]) return false;
+  if (filters.kind!=='all' && (o.kind||'opportunity')!==filters.kind) return false;  // ← add this
   if (filters.q){
     const hay = (o.title+' '+(o.buyer||'')+' '+(o.cpv||[]).join(' ')).toLowerCase();
     if (!hay.includes(filters.q.toLowerCase())) return false;
@@ -302,8 +303,9 @@ function renderError(msg){
 
 // ── wire controls ──
 document.getElementById('q').addEventListener('input', e=>{ filters.q=e.target.value; render(); });
-for (const seg of ['srcSeg','tierSeg']){
-  const key = seg==='srcSeg'?'src':'tier', attr='data-'+key;
+const SEG_KEY = { srcSeg:'src', kindSeg:'kind' };
+for (const seg of ['srcSeg','kindSeg']){
+  const key = SEG_KEY[seg], attr='data-'+key;
   document.getElementById(seg).addEventListener('click', e=>{
     const b=e.target.closest('button'); if(!b) return;
     filters[key]=b.getAttribute(attr);
