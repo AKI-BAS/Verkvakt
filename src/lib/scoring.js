@@ -188,14 +188,38 @@ export function scoreOpportunity(opp) {
   const is_major =
     tier === 'high' && (v >= 50_000_000 || (daysLeft != null && daysLeft <= 14));
  
-  // kind: separate actionable opportunities from editorial/financial news.
-  // A row is an opportunity if it carries any concrete project signal; news
-  // sources (byggingar) with none of those — and anything flagged noise — are news.
-  const actionable =
-    cpvPos.length || kwDesign.length || kwLead.length || isWorksTender || isCompetition;
-  let kind = 'opportunity';
-  if (kwNoise.length && !actionable) kind = 'news';
-  else if (opp.notice_type === 'news' && !actionable) kind = 'news';
+  // ── kind: actionable opportunity vs editorial/planning news ────────────────
+  // The planning portal (skipulagsgátt, notice_type 'planning') and the news
+  // feed (byggingar, notice_type 'news') are mostly NOT biddable work — routine
+  // zoning notices, road changes, financial stories. They default to NEWS so
+  // they don't drown the dashboard. But we must NOT bury the strategic ones: a
+  // competition launch, a design RFP, or a real development lead hiding in those
+  // feeds gets promoted to OPPORTUNITY. Tender feeds (TED, FÍLA, útboðsvefur)
+  // are biddable by nature, so they default to OPPORTUNITY.
+ 
+  // Explicit tender-invitation language not already captured above.
+  const invitesTender =
+    /býður út|óskar eftir tilboð|óskað er eftir tilboð|auglýsir útboð|óskað eftir hönnuð|óskað eftir arkitekt|óskað eftir ráðgjöf/i.test(text);
+ 
+  // A surface-worthy signal: design procurement, development lead, competition,
+  // tender invitation, or a hard CPV architecture match.
+  const strategic =
+    cpvPos.length || kwDesign.length || kwLead.length || isCompetition || invitesTender;
+ 
+  // Planning case already concluded — history, not a lead.
+  const closedCase =
+    (opp.raw && /lokið/i.test(String(opp.raw.stada ?? ''))) ||
+    /lokið/i.test(String(opp.description ?? ''));
+ 
+  const editorialSource = opp.notice_type === 'news' || opp.notice_type === 'planning';
+ 
+  let kind;
+  if (editorialSource) {
+    kind = (strategic && !closedCase) ? 'opportunity' : 'news';
+    if (kind === 'opportunity') signals.push('promoted-from-feed');
+  } else {
+    kind = (kwNoise.length && !strategic) ? 'news' : 'opportunity';
+  }
  
   return { score, tier, signals, is_major, kind };
 }
