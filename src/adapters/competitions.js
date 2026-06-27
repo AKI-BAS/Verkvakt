@@ -19,6 +19,30 @@ const SOURCES = [
   { id: 'fila', name: 'FÍLA', url: 'https://fila.is/category/samkeppnir/asamkeppnir/feed/' },
 ];
  
+// ── recency + editorial gates ──────────────────────────────────────────────
+// A FÍLA feed item is worth surfacing only if it could plausibly still be open.
+// We drop three kinds of dead weight at ingestion so they never enter the DB:
+//   (a) editorial that isn't a call for entries — prize nominations, results,
+//       winner announcements (e.g. "Tilnefningar til umhverfisverðlauna …");
+//   (b) items already past their parsed deadline;
+//   (c) items with NO findable deadline that are older than STALE_DAYS — an
+//       undated competition that's months old is almost certainly closed.
+const STALE_DAYS = 90;
+ 
+// Title markers of non-opportunity editorial (nominations / prizes / results).
+const EDITORIAL_RE =
+  /tilnefning|verðlaun|verdlaun|úrslit|urslit|vinningstillag|vinningshaf|niðurstöð|nidurstod|sigurveg/i;
+ 
+// True if the item could still be open: future (or unknown) deadline, and not
+// an old undated straggler.
+function isStillOpen(it, deadline_at) {
+  const now = Date.now();
+  if (deadline_at) return new Date(deadline_at).getTime() >= now; // past deadline → closed
+  if (!it.published_at) return true;                              // unknown age → keep
+  const ageDays = (now - new Date(it.published_at).getTime()) / 864e5;
+  return ageDays <= STALE_DAYS;                                   // old + undated → drop
+}
+ 
 const MONTHS = {
   'januar': 0, 'februar': 1, 'mars': 2, 'april': 3, 'mai': 4, 'juni': 5,
   'juli': 6, 'agust': 7, 'september': 8, 'oktober': 9, 'november': 10, 'desember': 11,
@@ -124,8 +148,15 @@ export async function fetchCompetitions() {
     }
  
     for (const it of feedItems) {
+      // (a) skip prize/nomination/results editorial — not a call for entries.
+      if (EDITORIAL_RE.test(it.title)) continue;
+ 
       const pubDate = it.published_at ? new Date(it.published_at) : null;
       const deadline_at = pubDate ? await fetchDeadline(it.link, pubDate) : null;
+ 
+      // (b)+(c) skip anything already closed or old-and-undated.
+      if (!isStillOpen(it, deadline_at)) continue;
+ 
       out.push({
         source: src.id,
         source_uid: it.source_uid,

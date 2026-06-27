@@ -55,6 +55,41 @@ function isoDateTime(v) {
   return isoDate(v);
 }
  
+// ── title resolution ───────────────────────────────────────────────────────
+// The marker collection's exact key for the case SUBJECT wasn't confirmable
+// remotely, and many records return no `heitiMals` (that's the "Mál 503" bug).
+// Try the likely subject keys in order; if none is present, build an
+// INFORMATIVE label from whatever descriptive fields exist — never a bare
+// "Mál N". The one-time key dump (in the loop) lets us lock the exact field.
+const SKG_TITLE_KEYS = [
+  "heitiMals", "malsheiti", "titill", "heiti", "nafn",
+  "vidfangsefni", "malsefni", "efni", "lysing",
+];
+const SKG_TYPE_KEYS  = ["tegundFerlis", "nuverandiFasi", "malsflokkur"];
+const SKG_WHERE_KEYS = ["sveitarfelog", "sveitarfelag", "umbod", "stofnun"];
+ 
+function skgFirst(obj, keys) {
+  for (const k of keys) {
+    const v = obj[k];
+    if (typeof v === "string" && v.trim()) return v.trim();
+  }
+  return null;
+}
+function skgTitle(p) {
+  const subject = skgFirst(p, SKG_TITLE_KEYS);
+  if (subject) return subject;
+  // Informative fallback beats "Mál 503": "<type> — <where> (mál <nr>)".
+  const type  = skgFirst(p, SKG_TYPE_KEYS);
+  const where = skgFirst(p, SKG_WHERE_KEYS);
+  const nr    = p.malsnr ?? p.id;
+  const lead  = [type, where].filter(Boolean).join(" — ");
+  if (lead)  return `${lead}${nr ? ` (mál ${nr})` : ""}`;
+  return `Mál ${nr ?? "?"}`;
+}
+ 
+// One-time diagnostic so the real field names can be confirmed from worker logs.
+let SKG_LOGGED = false;
+ 
 export async function fetchSkipulagsgatt({
   pageSize = 200,
   maxPages = 30,
@@ -82,11 +117,17 @@ export async function fetchSkipulagsgatt({
     for (const f of features) {
       const p = f.properties || {};
  
+      if (!SKG_LOGGED) {
+        SKG_LOGGED = true;
+        console.log("[skipulagsgatt] property keys:", Object.keys(p).join(", "));
+        console.log("[skipulagsgatt] sample feature:", JSON.stringify(p).slice(0, 800));
+      }
+ 
       // Liveness filter: drop closed cases. They're historical, not opportunities.
       if (!includeFinished && p.stadaMals === "Lokið") continue;
  
       // Text the keyword scorer reads (planning cases carry no CPV).
-      const description = [p.heitiMals, p.tegundFerlis, p.vidfangsefni, p.nuverandiFasi, p.umbod]
+      const description = [skgTitle(p), p.tegundFerlis, p.vidfangsefni, p.nuverandiFasi, p.umbod]
         .filter(Boolean)
         .join(" · ")
         .slice(0, 1500);
@@ -94,7 +135,7 @@ export async function fetchSkipulagsgatt({
       out.push({
         source: "skipulagsgatt",
         source_uid: String(p.malsnr ?? p.id ?? f.id),
-        title: p.heitiMals ?? `Mál ${p.malsnr ?? p.id}`,
+        title: skgTitle(p),
         buyer: p.umbod ?? p.sveitarfelog ?? "",
         country: "IS",
         cpv: [],
@@ -173,4 +214,3 @@ export async function fetchByggingar({ sinceDays = 30, perPage = 50, maxPages = 
   }
   return out;
 }
- 
