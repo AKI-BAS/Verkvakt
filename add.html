@@ -126,7 +126,13 @@ function parseUtbod(text){
   const type   = field(text,'Tegund');
   const deadline = field(text,'Skilafrestur');
   const published= field(text,'Útboðsgögn afhent');
-  const link = (text.match(/https?:\/\/\S+/)||[])[0] || null;
+  const urls = text.match(/https?:\/\/\S+/g) || [];
+  // prefer the útboðsvefur public page (stable), then any non-TendSign link,
+  // then whatever's first. TendSign deep-links often need a session and may
+  // not open cleanly on their own.
+  const link = urls.find(u=>/utbodsvefur\.is/i.test(u))
+            || urls.find(u=>!/tendsign\.is/i.test(u))
+            || urls[0] || null;
   const blankIdx = lines.findIndex((l,i)=>i>3 && l.trim()==='');
   const description = blankIdx>=0 ? lines.slice(blankIdx).join(' ').replace(/\s+/g,' ').trim() : '';
   return {
