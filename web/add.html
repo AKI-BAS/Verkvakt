@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="light dark" />
+<title>Verkvakt — add tender</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    color-scheme:light dark;
+    --paper:#FAFAF7; --ink:#18181B; --muted:#76766C; --faint:#9A9A90;
+    --line:#E6E5DE; --accent:#2E4A66; --urgent:#A33C2A; --ok:#2E6B45; --field:#fff;
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --paper:#15161A; --ink:#ECEBE4; --muted:#9C9C92; --faint:#6B6C66;
+    --line:#2B2C32; --accent:#86A9CE; --urgent:#E1836A; --ok:#7FC79B; --field:#1D1E24;
+  }}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--paper)}
+  body{font-family:Archivo,system-ui,sans-serif;color:var(--ink);font-size:16px;line-height:1.5}
+  .wrap{max-width:760px;margin:0 auto;padding:28px 24px 80px}
+  .mono{font-family:"IBM Plex Mono",monospace}
+  header{display:flex;align-items:baseline;gap:12px;border-bottom:1px solid var(--ink);padding-bottom:14px;margin-bottom:8px}
+  header h1{font-size:20px;font-weight:600;margin:0;letter-spacing:-.02em}
+  header .sub{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  p.lead{color:var(--muted);font-size:14px;margin:14px 0 18px}
+  textarea{width:100%;min-height:200px;font-family:"IBM Plex Mono",monospace;font-size:13px;line-height:1.5;
+    padding:14px;border:1px solid var(--line);border-radius:3px;background:var(--field);color:var(--ink);resize:vertical}
+  textarea:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+  .row{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+  button{font:inherit;font-size:14px;font-weight:500;padding:10px 18px;border:1px solid var(--ink);border-radius:3px;
+    background:var(--ink);color:var(--paper);cursor:pointer}
+  button.ghost{background:transparent;color:var(--ink)}
+  button:disabled{opacity:.4;cursor:not-allowed}
+  button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .preview{margin-top:22px;border:1px solid var(--line);border-radius:3px;padding:18px;display:none}
+  .preview.show{display:block}
+  .pv-title{font-size:17px;font-weight:500;margin:0 0 4px}
+  .pv-tier{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+    padding:2px 7px;border-radius:2px;border:1px solid var(--line);margin-left:8px;vertical-align:middle}
+  .pv-tier.high{color:var(--accent);border-color:var(--accent)}
+  .pv-tier.excluded{color:var(--urgent);border-color:var(--urgent)}
+  .pv-tier.low,.pv-tier.medium{color:var(--muted)}
+  dl{display:grid;grid-template-columns:120px 1fr;gap:6px 14px;margin:14px 0 0;font-size:13px}
+  dt{color:var(--muted);font-family:"IBM Plex Mono",monospace;font-size:11px;text-transform:uppercase;letter-spacing:.04em;padding-top:2px}
+  dd{margin:0}
+  dd a{color:var(--accent)}
+  .signals{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--muted);margin-top:2px}
+  .msg{margin-top:16px;font-size:14px;padding:10px 14px;border-radius:3px;display:none}
+  .msg.show{display:block}
+  .msg.ok{color:var(--ok);border:1px solid var(--ok)}
+  .msg.err{color:var(--urgent);border:1px solid var(--urgent)}
+  .demo{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--faint);margin-top:24px}
+  a.back{color:var(--accent);font-size:13px;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Verkvakt</h1><span class="sub">add tender</span>
+  </header>
+  <p class="lead">Paste the text of a tender page from útboðsvefur (or any lead) below.
+    It's parsed, scored, and—on confirm—saved to your dashboard. You open the page
+    in your browser; this only processes the text you paste.</p>
+
+  <textarea id="input" placeholder="Paste tender text here…
+e.g.
+Stóra-Hraun Öryggisfangelsi – Jarðvinnuframkvæmd
+Númer: 25-0115
+Útboðsaðili: FSRE …
+Skilafrestur 20.08.2026 kl. 12:00
+…"></textarea>
+
+  <div class="row">
+    <button id="parseBtn">Parse &amp; preview</button>
+    <button class="ghost" id="clearBtn">Clear</button>
+  </div>
+
+  <div class="preview" id="preview">
+    <h2 class="pv-title" id="pvTitle"></h2>
+    <span class="pv-tier" id="pvTier"></span>
+    <dl id="pvFields"></dl>
+    <div class="signals" id="pvSignals"></div>
+    <div class="row">
+      <button id="saveBtn">Save to dashboard</button>
+    </div>
+  </div>
+
+  <div class="msg" id="msg"></div>
+  <p class="demo" id="cfg"></p>
+  <a class="back" href="index.html">← back to dashboard</a>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script type="module">
+import { scoreOpportunity } from './score.js';
+
+// ── CONFIG: same Supabase project as the dashboard. The anon key can only READ.
+// Saving needs INSERT, so this page needs an insert policy for anon (see note
+// below) OR you paste a key with insert rights. Simplest: add an anon insert
+// policy scoped to source='utbodsvefur-manual'. Instructions in chat.
+const SUPABASE_URL  = "";
+const SUPABASE_ANON = "";
+
+let parsed = null;
+
+// ---- the parser (same logic proven against a real útboðsvefur page) ----
+function parseIcelandicDateTime(s){
+  const m = s && s.match(/(\d{1,2})\.(\d{1,2})\.(\d{4})(?:\s*kl\.?\s*(\d{1,2}):(\d{2}))?/);
+  if(!m) return null;
+  const [,dd,mm,yyyy,hh,min]=m;
+  return new Date(Date.UTC(+yyyy,+mm-1,+dd,hh?+hh:0,min?+min:0)).toISOString();
+}
+function field(text,label){
+  const m = text.match(new RegExp(label+'\\s*:?\\s*\\t*\\s*(.+)','i'));
+  return m ? m[1].trim() : null;
+}
+function parseUtbod(text){
+  const lines = text.split('\n').map(l=>l.trimEnd());
+  const title = lines[0]?.trim() || '(untitled)';
+  const number = field(text,'Númer');
+  const buyer  = field(text,'Útboðsaðili');
+  const type   = field(text,'Tegund');
+  const deadline = field(text,'Skilafrestur');
+  const published= field(text,'Útboðsgögn afhent');
+  const link = (text.match(/https?:\/\/\S+/)||[])[0] || null;
+  const blankIdx = lines.findIndex((l,i)=>i>3 && l.trim()==='');
+  const description = blankIdx>=0 ? lines.slice(blankIdx).join(' ').replace(/\s+/g,' ').trim() : '';
+  return {
+    source:'utbodsvefur-manual',
+    source_uid: number || link || title,
+    title, buyer, country:'IS', cpv:[], notice_type:type, url:link,
+    published_at: published ? parseIcelandicDateTime(published) : null,
+    deadline_at: deadline ? parseIcelandicDateTime(deadline) : null,
+    est_value:null, currency:null,
+    description: (title+' '+description).slice(0,1000),
+    raw:{ number, type, pastedAt:new Date().toISOString() },
+  };
+}
+
+function fmtDate(iso){ return iso ? new Date(iso).toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—'; }
+
+document.getElementById('parseBtn').onclick = () => {
+  const text = document.getElementById('input').value.trim();
+  if(!text){ return; }
+  parsed = parseUtbod(text);
+  const verdict = scoreOpportunity(parsed);
+  parsed.score = verdict.score; parsed.tier = verdict.tier;
+  parsed.signals = JSON.stringify(verdict.signals); parsed.is_major = verdict.is_major;
+
+  document.getElementById('pvTitle').textContent = parsed.title;
+  const tierEl = document.getElementById('pvTier');
+  tierEl.textContent = `${parsed.tier} · ${parsed.score}`;
+  tierEl.className = 'pv-tier ' + parsed.tier;
+  document.getElementById('pvFields').innerHTML = `
+    <dt>Buyer</dt><dd>${parsed.buyer||'—'}</dd>
+    <dt>Type</dt><dd>${parsed.notice_type||'—'}</dd>
+    <dt>Deadline</dt><dd>${fmtDate(parsed.deadline_at)}</dd>
+    <dt>Published</dt><dd>${fmtDate(parsed.published_at)}</dd>
+    <dt>Ref</dt><dd>${parsed.source_uid||'—'}</dd>
+    <dt>Link</dt><dd>${parsed.url?`<a href="${parsed.url}" target="_blank" rel="noopener">open tender ↗</a>`:'—'}</dd>`;
+  document.getElementById('pvSignals').textContent = 'signals: ' + verdict.signals.join(' · ');
+  document.getElementById('preview').classList.add('show');
+  document.getElementById('msg').classList.remove('show');
+};
+
+document.getElementById('clearBtn').onclick = () => {
+  document.getElementById('input').value='';
+  document.getElementById('preview').classList.remove('show');
+  document.getElementById('msg').classList.remove('show');
+};
+
+document.getElementById('saveBtn').onclick = async () => {
+  const msg = document.getElementById('msg');
+  if(!SUPABASE_URL || !SUPABASE_ANON){
+    msg.className='msg err show';
+    msg.textContent='Add your Supabase URL + anon key at the top of add.html to save.';
+    return;
+  }
+  try{
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+    const { error } = await db.from('opportunities')
+      .upsert(parsed, { onConflict:'source,source_uid' });
+    if(error) throw error;
+    msg.className='msg ok show';
+    msg.textContent='Saved. It will appear on the dashboard (refresh).';
+  }catch(e){
+    msg.className='msg err show';
+    msg.textContent='Save failed: '+(e.message||e)+'  (likely needs an anon insert policy — see chat.)';
+  }
+};
+
+document.getElementById('cfg').textContent =
+  (SUPABASE_URL && SUPABASE_ANON) ? '' : 'Not connected — fill in Supabase keys at the top of add.html to enable saving.';
+</script>
+</body>
+</html>

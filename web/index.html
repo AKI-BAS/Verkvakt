@@ -45,6 +45,12 @@
   .brand h1{font-size:21px; font-weight:600; letter-spacing:-.02em; margin:0}
   .brand .sub{font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted)}
   .summary{font-size:12px; letter-spacing:.04em; color:var(--muted); text-align:right}
+  .head-right{display:flex; align-items:center; gap:16px}
+  .add-link{font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--paper); background:var(--ink); border:1px solid var(--ink); border-radius:2px;
+    padding:7px 12px; text-decoration:none; white-space:nowrap}
+  .add-link:hover{opacity:.85}
+  .add-link:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
   .summary b{color:var(--ink); font-weight:500}
   .summary .u{color:var(--urgent)}
 
@@ -108,8 +114,9 @@
     .row{grid-template-columns:auto 1fr; gap:12px}
     .end{grid-column:2; text-align:left; margin-top:8px; display:flex; gap:16px; align-items:baseline}
     .dl{margin-top:0}
-    .masthead{flex-direction:column; align-items:flex-start; gap:6px}
+    .masthead{flex-direction:column; align-items:flex-start; gap:8px}
     .summary{text-align:left}
+    .head-right{width:100%; justify-content:space-between}
   }
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -122,7 +129,10 @@
         <h1>Verkvakt</h1>
         <span class="sub">opportunity radar</span>
       </div>
-      <div class="summary" id="summary">loading…</div>
+      <div class="head-right">
+        <div class="summary" id="summary">loading…</div>
+        <a class="add-link" href="add.html">+ Add tender</a>
+      </div>
     </div>
     <div class="controls">
       <input type="search" id="q" placeholder="Filter by title, buyer, CPV…" aria-label="Filter opportunities">
@@ -151,8 +161,8 @@
 // ── CONFIG ───────────────────────────────────────────────────────────────
 // Fill these in once Supabase is set up. Until then, the dashboard runs on
 // bundled sample data so you can see the layout immediately.
-const SUPABASE_URL  = "https://eghjeemcfreihhzdbnnc.supabase.co";
-const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVnaGplZW1jZnJlaWhoemRibm5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MjYyNjEsImV4cCI6MjA5ODAwMjI2MX0.GtTcGyop_FnQf0iN0pnVkAqNJFct_R7JeHJMGTZzz04";
+const SUPABASE_URL  = "";   // e.g. "https://abcd.supabase.co"
+const SUPABASE_ANON = "";   // the public anon key (safe to expose; read-only via RLS)
 
 // ── sample data (clearly marked) so the page is alive before the DB is wired ─
 const SAMPLE = [
