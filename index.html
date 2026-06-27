@@ -1,10 +1,10 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="color-scheme" content="light dark" />
-<title>Verkvakt â€” opportunity radar</title>
+<title>Verkvakt — opportunity radar</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -38,7 +38,7 @@
   .mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
   .wrap{max-width:1080px; margin:0 auto; padding:0 24px}
 
-  /* â”€â”€ header â”€â”€ */
+  /* ── header ── */
   header{border-bottom:1px solid var(--ink); position:sticky; top:0; background:var(--paper); z-index:5}
   .masthead{display:flex; align-items:baseline; justify-content:space-between; gap:16px; padding:22px 0 14px}
   .brand{display:flex; align-items:baseline; gap:14px}
@@ -54,7 +54,7 @@
   .summary b{color:var(--ink); font-weight:500}
   .summary .u{color:var(--urgent)}
 
-  /* â”€â”€ controls â”€â”€ */
+  /* ── controls ── */
   .controls{display:flex; flex-wrap:wrap; gap:10px; align-items:center; padding:12px 0 16px}
   .controls input[type=search]{
     flex:1; min-width:180px; font:inherit; font-size:14px; padding:9px 12px;
@@ -70,14 +70,14 @@
   .seg button[aria-pressed=true]{background:var(--ink); color:var(--paper)}
   .seg button:focus-visible{outline:2px solid var(--accent); outline-offset:-2px}
 
-  /* â”€â”€ list â”€â”€ */
+  /* ── list ── */
   .list{padding:0 0 80px}
   .row{
     display:grid; grid-template-columns:auto 1fr auto; gap:18px; align-items:start;
     padding:18px 0 17px; border-bottom:1px solid var(--line2); position:relative;
   }
   .row:hover{background:linear-gradient(90deg, var(--hover), transparent 60%)}
-  /* signature: relevance marker â€” three stacked ticks, filled by tier */
+  /* signature: relevance marker — three stacked ticks, filled by tier */
   .mark{display:flex; flex-direction:column; gap:3px; width:14px; padding-top:5px}
   .mark i{height:8px; width:14px; background:var(--line); border:1px solid var(--line); display:block}
   .mark[data-tier=low] i:nth-child(1){background:var(--faint);border-color:var(--faint)}
@@ -103,7 +103,7 @@
   .dl.soon b{color:var(--urgent)}
   .dl.open{color:var(--faint)}
 
-  /* â”€â”€ states â”€â”€ */
+  /* ── states ── */
   .state{padding:64px 0; text-align:center; color:var(--muted)}
   .state h3{font-weight:500; color:var(--ink); margin:0 0 6px}
   .demo{font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.04em; text-transform:uppercase;
@@ -130,17 +130,17 @@
         <span class="sub">opportunity radar</span>
       </div>
       <div class="head-right">
-        <div class="summary" id="summary">loadingâ€¦</div>
+        <div class="summary" id="summary">loading…</div>
         <a class="add-link" href="add.html">+ Add tender</a>
       </div>
     </div>
     <div class="controls">
-      <input type="search" id="q" placeholder="Filter by title, buyer, CPVâ€¦" aria-label="Filter opportunities">
+      <input type="search" id="q" placeholder="Filter by title, buyer, CPV…" aria-label="Filter opportunities">
       <div class="seg" id="srcSeg" role="group" aria-label="Source">
         <button data-src="all" aria-pressed="true">All</button>
         <button data-src="ted">TED</button>
         <button data-src="competitions">Comp</button>
-        <button data-src="utbodsvefur">ÃštboÃ°</button>
+        <button data-src="utbodsvefur">Útboð</button>
       </div>
      <div class="seg" id="kindSeg" role="group" aria-label="Type">
         <button data-kind="opportunity" aria-pressed="true">Opportunities</button>
@@ -159,43 +159,43 @@
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-// â”€â”€ CONFIG â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── CONFIG ───────────────────────────────────────────────────────────────
 // Fill these in once Supabase is set up. Until then, the dashboard runs on
 // bundled sample data so you can see the layout immediately.
 const SUPABASE_URL  = window.VERKVAKT_CONFIG?.SUPABASE_URL || "";
 const SUPABASE_ANON = window.VERKVAKT_CONFIG?.SUPABASE_ANON || "";
 
-// â”€â”€ sample data (clearly marked) so the page is alive before the DB is wired â”€
+// ── sample data (clearly marked) so the page is alive before the DB is wired ─
 const SAMPLE = [
-  { source:'competitions', title:'HÃ¶nnunarsamkeppni um endurhÃ¶nnun GrÃ³farhÃºss â€“ framtÃ­Ã°arbÃ³kasafn miÃ°borgarinnar',
-    buyer:'ReykjavÃ­kurborg', cpv:['71200000'], notice_type:'competition',
+  { source:'competitions', title:'Hönnunarsamkeppni um endurhönnun Grófarhúss – framtíðarbókasafn miðborgarinnar',
+    buyer:'Reykjavíkurborg', cpv:['71200000'], notice_type:'competition',
     url:'https://reykjavik.is/en/grofarhus', deadline_at:daysFromNow(9), est_value:null, tier:'high', score:72, is_major:true,
     signals:['cpv+ 71200000','competition'] },
-  { source:'ted', title:'Iceland-ReykjavÃ­k: Architectural and related services â€” new upper-secondary school',
-    buyer:'FramkvÃ¦mdasÃ½slan â€“ RÃ­kiseignir (FSRE)', cpv:['71221000','71240000'], notice_type:'pin',
+  { source:'ted', title:'Iceland-Reykjavík: Architectural and related services — new upper-secondary school',
+    buyer:'Framkvæmdasýslan – Ríkiseignir (FSRE)', cpv:['71221000','71240000'], notice_type:'pin',
     url:'https://ted.europa.eu/en/notice/88826-2021', deadline_at:daysFromNow(41), est_value:180000000, tier:'high', score:68, is_major:true,
-    signals:['cpv+ 71221000,71240000','valueâ‰¥50M'] },
-  { source:'competitions', title:'Forval â€“ Ã¾verfagleg teymi, uppbygging og skipulag Ã¡tta byggingarreita viÃ° sjÃ¡varsÃ­Ã°una',
-    buyer:'FasteignaÃ¾rÃ³unarfÃ©lagiÃ° Spilda ehf', cpv:[], notice_type:'competition',
+    signals:['cpv+ 71221000,71240000','value≥50M'] },
+  { source:'competitions', title:'Forval – þverfagleg teymi, uppbygging og skipulag átta byggingarreita við sjávarsíðuna',
+    buyer:'Fasteignaþróunarfélagið Spilda ehf', cpv:[], notice_type:'competition',
     url:'https://fila.is/category/samkeppnir/asamkeppnir/', deadline_at:daysFromNow(23), est_value:null, tier:'high', score:58,
     signals:['kw+ skipulag,forval','competition'] },
-  { source:'utbodsvefur', title:'InnanhÃºsshÃ¶nnun og rÃ½misskipulag â€” endurnÃ½jun skrifstofuhÃºsnÃ¦Ã°is',
-    buyer:'SveitarfÃ©lag', cpv:['79932000'], notice_type:'contract',
+  { source:'utbodsvefur', title:'Innanhússhönnun og rýmisskipulag — endurnýjun skrifstofuhúsnæðis',
+    buyer:'Sveitarfélag', cpv:['79932000'], notice_type:'contract',
     url:'https://utbodsvefur.is', deadline_at:daysFromNow(5), est_value:14000000, tier:'medium', score:34,
-    signals:['cpv+ 79932000','kw+ innanhÃºss','closingâ‰¤7d'] },
-  { source:'ted', title:'Iceland-Akureyri: Landscape architectural services â€” public realm masterplan',
-    buyer:'AkureyrarbÃ¦r', cpv:['71400000'], notice_type:'cn-standard',
+    signals:['cpv+ 79932000','kw+ innanhúss','closing≤7d'] },
+  { source:'ted', title:'Iceland-Akureyri: Landscape architectural services — public realm masterplan',
+    buyer:'Akureyrarbær', cpv:['71400000'], notice_type:'cn-standard',
     url:'https://ted.europa.eu/en/notice/-/detail/408098-2021', deadline_at:daysFromNow(31), est_value:42000000, tier:'medium', score:48,
     signals:['cpv+ 71400000','kw+ landslag'] },
-  { source:'utbodsvefur', title:'RaflagnahÃ¶nnun og endurnÃ½jun raflagna Ã­ eldra mannvirki',
-    buyer:'RÃ­kisstofnun', cpv:['45310000'], notice_type:'contract',
+  { source:'utbodsvefur', title:'Raflagnahönnun og endurnýjun raflagna í eldra mannvirki',
+    buyer:'Ríkisstofnun', cpv:['45310000'], notice_type:'contract',
     url:'https://utbodsvefur.is', deadline_at:daysFromNow(18), est_value:60000000, tier:'excluded', score:-22,
     signals:['cpv- 45310000','kw- raflagnir'] },
 ];
 
 function daysFromNow(n){ return new Date(Date.now()+n*86400000).toISOString(); }
 
-// â”€â”€ state â”€â”€
+// ── state ──
 let DATA = [];
 let DEMO = false;
 const filters = { q:'', src:'all', tier:'all', kind:'opportunity' };
@@ -205,7 +205,7 @@ async function load(){
   if (SUPABASE_URL && SUPABASE_ANON && window.supabase){
     try {
       const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
-      const { data, error } = await db.from('v_open_opportunities').select('*');
+      const { data, error } = await db.from('v_open_opportunities').select('*').range(0, 9999);
       if (error) throw error;
       DATA = data || [];
       render();
@@ -219,7 +219,7 @@ async function load(){
 }
 
 function fmtVal(v){
-  if (!v) return {txt:'â€”', none:true};
+  if (!v) return {txt:'—', none:true};
   if (v >= 1_000_000) return {txt:(v/1_000_000).toFixed(v>=10_000_000?0:1)+'M kr'};
   return {txt:Math.round(v/1000)+'k kr'};
 }
@@ -230,12 +230,12 @@ function deadline(iso){
   return {txt:`<b>${d}</b> day${d===1?'':'s'}`, cls: d<=7?'soon':''};
 }
 function esc(s){ return (s||'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
-const SRC_LABEL = { ted:'TED', competitions:'Competition', utbodsvefur:'ÃštboÃ°svefur' };
+const SRC_LABEL = { ted:'TED', competitions:'Competition', utbodsvefur:'Útboðsvefur' };
 
 function passes(o){
   if (filters.src!=='all' && o.source!==filters.src) return false;
   if (filters.tier!=='all' && TIER_RANK[o.tier] < TIER_RANK[filters.tier]) return false;
-  if (filters.kind!=='all' && (o.kind||'opportunity')!==filters.kind) return false;  // â† add this
+  if (filters.kind!=='all' && (o.kind||'opportunity')!==filters.kind) return false;  // ← add this
   if (filters.q){
     const hay = (o.title+' '+(o.buyer||'')+' '+(o.cpv||[]).join(' ')).toLowerCase();
     if (!hay.includes(filters.q.toLowerCase())) return false;
@@ -250,7 +250,7 @@ function render(){
   const open = DATA.length;
   const soon = DATA.filter(o=>{const dl=deadline(o.deadline_at); return dl.cls==='soon';}).length;
   document.getElementById('summary').innerHTML =
-    `<b>${open}</b> open` + (soon?` Â· <span class="u">${soon} closing this week</span>`:'');
+    `<b>${open}</b> open` + (soon?` · <span class="u">${soon} closing this week</span>`:'');
 
   const list = document.getElementById('list');
   if (!rows.length){
@@ -261,7 +261,7 @@ function render(){
 
   list.innerHTML = rows.map(o=>{
     const v = fmtVal(o.est_value), dl = deadline(o.deadline_at);
-    const cpv = (o.cpv||[]).slice(0,2).join(' Â· ');
+    const cpv = (o.cpv||[]).slice(0,2).join(' · ');
     return `<article class="row">
       <div class="mark" data-tier="${o.tier}" title="relevance: ${o.tier} (${o.score})">
         <i></i><i></i><i></i>
@@ -287,8 +287,8 @@ function render(){
 function setFoot(shown){
   const f = document.getElementById('foot');
   const stamp = new Date().toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
-  f.innerHTML = (DEMO ? `<span class="demo">Sample data â€” add Supabase keys in index.html to go live</span><br><br>`:'')
-    + `${shown!=null?shown+' shown Â· ':''}updated ${stamp}`;
+  f.innerHTML = (DEMO ? `<span class="demo">Sample data — add Supabase keys in index.html to go live</span><br><br>`:'')
+    + `${shown!=null?shown+' shown · ':''}updated ${stamp}`;
 }
 
 function renderError(msg){
@@ -299,7 +299,7 @@ function renderError(msg){
      <div style="margin-top:10px">Check SUPABASE_URL and the anon key, and that RLS allows anon select.</div></div>`;
 }
 
-// â”€â”€ wire controls â”€â”€
+// ── wire controls ──
 document.getElementById('q').addEventListener('input', e=>{ filters.q=e.target.value; render(); });
 const SEG_KEY = { srcSeg:'src', kindSeg:'kind' };
 for (const seg of ['srcSeg','kindSeg']){
