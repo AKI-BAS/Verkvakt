@@ -1,4 +1,34 @@
-esign lead)
+// scoring.js — decide how relevant an opportunity is to the studio.
+//
+// Philosophy: never silently drop. We SCORE and RANK. Pure-construction and
+// pure-engineering jobs sink to the bottom; they don't disappear. The studio
+// said the goal is "more to choose from", so over-surfacing is the safe error.
+//
+// The output is explainable on purpose — `signals` records *why* something
+// scored as it did, so a low score is auditable rather than mysterious.
+//
+// Tune the lists below freely; they're the whole policy of the tool.
+ 
+// ── What the studio does: architecture, interiors, exteriors, planning,
+//    full service through construction. NOT pure electrical/plumbing/eng. ──
+ 
+// CPV families that are squarely architecture/design/planning (incl. bundled
+// arch+eng packages the studio leads or partners on). Matched as prefixes.
+const CPV_POSITIVE = [
+  '712',     // architectural & related services
+  '714',     // urban planning & landscape architecture
+  '71240',   // architectural, engineering and planning services (bundled)
+  '71250',   // architectural, engineering and surveying services (bundled)
+  '71530',   // construction consultancy
+  '79932',   // interior design services
+  '79933',   // design support / stage-set & similar
+];
+ 
+// CPV families that are pure non-architecture. Strong negative.
+const CPV_NEGATIVE = [
+  '4531',    // electrical installation
+  '4533',    // plumbing, heating, ventilation (MEP)
+  '7131',    // pure consultative engineering (no design lead)
   '7132',    // engineering design only
   '45',      // construction works (contractor scope) — soft, see note below
   '90',      // cleaning, environmental services
@@ -127,9 +157,8 @@ export function scoreOpportunity(opp) {
   else if (kwWorks.length) { score -= 5 * kwWorks.length; signals.push(`works- ${kwWorks.join(',')}`); }
  
   // Competitions are prime architecture opportunities — nudge them up.
-  if (/samkeppni|competition|forval|hugmyndaleit/i.test(text)) {
-    score += 15; signals.push('competition');
-  }
+  const isCompetition = /samkeppni|competition|forval|hugmyndaleit/i.test(text);
+  if (isCompetition) { score += 15; signals.push('competition'); }
  
   // Value boost (bigger projects are worth surfacing higher).
   const v = Number(opp.est_value) || 0;
@@ -159,5 +188,14 @@ export function scoreOpportunity(opp) {
   const is_major =
     tier === 'high' && (v >= 50_000_000 || (daysLeft != null && daysLeft <= 14));
  
-  return { score, tier, signals, is_major };
+  // kind: separate actionable opportunities from editorial/financial news.
+  // A row is an opportunity if it carries any concrete project signal; news
+  // sources (byggingar) with none of those — and anything flagged noise — are news.
+  const actionable =
+    cpvPos.length || kwDesign.length || kwLead.length || isWorksTender || isCompetition;
+  let kind = 'opportunity';
+  if (kwNoise.length && !actionable) kind = 'news';
+  else if (opp.notice_type === 'news' && !actionable) kind = 'news';
+ 
+  return { score, tier, signals, is_major, kind };
 }
