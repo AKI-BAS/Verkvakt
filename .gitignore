@@ -4,7 +4,3 @@ node_modules/
 *.log
 .DS_Store
 .env
-window.VERKVAKT_CONFIG = {
-  SUPABASE_URL: "https://eghjeemcfreihhzdbnnc.supabase.co",
-  SUPABASE_ANON: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVnaGplZW1jZnJlaWhoemRibm5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MjYyNjEsImV4cCI6MjA5ODAwMjI2MX0.GtTcGyop_FnQf0iN0pnVkAqNJFct_R7JeHJMGTZzz04"
-};

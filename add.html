@@ -94,6 +94,9 @@ Skilafrestur 20.08.2026 kl. 12:00
   <a class="back" href="index.html">← back to dashboard</a>
 </div>
 
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script type="module">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script type="module">
 import { scoreOpportunity } from './score.js';
@@ -102,8 +105,8 @@ import { scoreOpportunity } from './score.js';
 // Saving needs INSERT, so this page needs an insert policy for anon (see note
 // below) OR you paste a key with insert rights. Simplest: add an anon insert
 // policy scoped to source='utbodsvefur-manual'. Instructions in chat.
-const SUPABASE_URL  = "";
-const SUPABASE_ANON = "";
+const SUPABASE_URL  = window.VERKVAKT_CONFIG?.SUPABASE_URL || "";
+const SUPABASE_ANON = window.VERKVAKT_CONFIG?.SUPABASE_ANON || "";
 
 let parsed = null;
 
