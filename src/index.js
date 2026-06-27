@@ -9,10 +9,14 @@ import { fetchTed } from './adapters/ted.js';
 import { fetchCompetitions } from './adapters/competitions.js';
 import { scoreOpportunity } from './lib/scoring.js';
 import { upsertOpportunities, logRun } from './lib/supabase.js';
+import { fetchSkipulagsgatt, fetchByggingar } from './adapters/verkvakt-new-adapters.js';
+
 
 const ADAPTERS = [
   { name: 'ted',          run: () => fetchTed({ sinceDays: 180 }) },
   { name: 'competitions', run: () => fetchCompetitions() },
+  { name: 'skipulagsgatt', run: () => fetchSkipulagsgatt() },
+  { name: 'byggingar',     run: () => fetchByggingar({ sinceDays: 30 }) },
 ];
 
 async function runAll(env) {
