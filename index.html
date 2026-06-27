@@ -201,11 +201,16 @@ let DEMO = false;
 const filters = { q:'', src:'all', tier:'all', kind:'opportunity' };
 const TIER_RANK = { excluded:0, low:1, medium:2, high:3 };
 
+let DB = null;
 async function load(){
   if (SUPABASE_URL && SUPABASE_ANON && window.supabase){
     try {
-      const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
-      const { data, error } = await db.from('v_open_opportunities').select('*').range(0, 9999);
+      DB = DB || window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+      // Filter by kind on the server so we never blow past Supabase's 1000-row cap.
+      // The default 'opportunity' slice is small; 'news' fetches its own slice.
+      let qy = DB.from('v_open_opportunities').select('*');
+      if (filters.kind !== 'all') qy = qy.eq('kind', filters.kind);
+      const { data, error } = await qy;
       if (error) throw error;
       DATA = data || [];
       render();
@@ -301,16 +306,19 @@ function renderError(msg){
 
 // ── wire controls ──
 document.getElementById('q').addEventListener('input', e=>{ filters.q=e.target.value; render(); });
-const SEG_KEY = { srcSeg:'src', kindSeg:'kind' };
-for (const seg of ['srcSeg','kindSeg']){
-  const key = SEG_KEY[seg], attr='data-'+key;
-  document.getElementById(seg).addEventListener('click', e=>{
+
+function wireSeg(id, key, after){
+  document.getElementById(id).addEventListener('click', e=>{
     const b=e.target.closest('button'); if(!b) return;
-    filters[key]=b.getAttribute(attr);
+    filters[key]=b.getAttribute('data-'+key);
     [...e.currentTarget.children].forEach(x=>x.setAttribute('aria-pressed', x===b));
-    render();
+    after();
   });
 }
+// src/tier/q filter the already-fetched slice client-side -> render().
+// kind selects a different server-side slice -> load() re-fetches.
+wireSeg('srcSeg','src', render);
+wireSeg('kindSeg','kind', load);
 
 load();
 </script>
