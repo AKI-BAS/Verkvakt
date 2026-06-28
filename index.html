@@ -229,7 +229,7 @@ async function load(){
       DB = DB || window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
       // Filter by kind on the server so we never blow past Supabase's 1000-row cap.
       // The default 'opportunity' slice is small; 'news' fetches its own slice.
-      let qy = DB.from('v_open_opportunities').select('*');
+      let qy = DB.from('v_open_opportunities').select('*').neq('tier', 'excluded');
       if (filters.kind !== 'all') qy = qy.eq('kind', filters.kind);
       const { data, error } = await qy;
       if (error) throw error;
