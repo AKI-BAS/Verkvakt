@@ -229,7 +229,7 @@ async function load(){
       DB = DB || window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
       // Filter by kind on the server so we never blow past Supabase's 1000-row cap.
       // The default 'opportunity' slice is small; 'news' fetches its own slice.
-      let qy = DB.from('v_open_opportunities').select('*').neq('tier', 'excluded');
+      let qy = DB.from('v_open_opportunities').select('*');
       if (filters.kind !== 'all') qy = qy.eq('kind', filters.kind);
       const { data, error } = await qy;
       if (error) throw error;
@@ -265,9 +265,10 @@ function fmtDate(iso){
   return d.toLocaleDateString('en-GB',
     sameYear ? {day:'numeric',month:'short'} : {day:'numeric',month:'short',year:'numeric'});
 }
-// Sort key for "newest": published date, falling back to first-seen; undated sink last.
+// Sort key for "newest": real publish date only. Undated rows sink to the bottom
+// rather than borrowing first_seen_at (ingestion time) and faking recency.
 function pubTime(o){
-  const t = Date.parse(o.published_at || o.first_seen_at || '');
+  const t = Date.parse(o.published_at || '');
   return isNaN(t) ? -Infinity : t;
 }
 function esc(s){ return (s||'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
