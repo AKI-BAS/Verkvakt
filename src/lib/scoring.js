@@ -70,8 +70,8 @@ const KW_NEGATIVE = [
 // plumbing), so only discipline-safe tokens belong in this boost.
 const KW_DESIGN = [
   'arkitekt', 'hönnunarsamkeppni', 'skipulagsráðgjöf', 'deiliskipulagsgerð',
-  'óskað eftir hönnuðum', 'óskað eftir ráðgjöfum', 'óskað eftir arkitekt',
-  'byggingarlist',
+  'óskað eftir hönnuðum','óskað eftir ráðgjöfum','óskað eftir arkitekt','byggingarlist',
+  'landslagsarkitekt','landslagshönnun','landslagsarkitektúr',
 ];
  
 // Construction EXECUTION terms -> a build tender (design already done), not a
@@ -99,6 +99,16 @@ const KW_LEAD = [
 ];
  
 // strip Icelandic diacritics so "hönnun" matches "honnun" etc.
+// Off-scope disciplines Doric Corner does not do: MEP/utility/civil works and
+// grounds/forestry maintenance. With ≥2 hits and no design role, these are excluded.
+const KW_OFFSCOPE = [
+  'lagnaframkvæmd','fráveitulögn','fráveitulagn','neysluvatnslögn','neysluvatnslagn',
+  'hitaveitulögn','hitaveitulagn','rafveitulögn','rafveitulagn','fjarskiptalögn','fjarskiptalagn',
+  'veitukerfi','veitulögn','veitulagn','vatnslögn','vatnslagn','gatnagerð','gatnaframkvæmd','malbik',
+  'trjáfelling','grisjun','hirðing grænna','hirðingu grænna','grænna svæða','kurlun',
+  'stubbatæting','trjáklifur','kjarrsögun','garðyrkja','sláttur','gróðursetning','skóglend',
+];
+
 function fold(s = '') {
   return s
     .toLowerCase()
@@ -153,6 +163,9 @@ export function scoreOpportunity(opp) {
  
   // Works-execution tender with no design role = build contract, not a design lead.
   const isWorksTender = kwWorks.length >= 2 && kwDesign.length === 0;
+  const kwOff = kwHits(text, KW_OFFSCOPE);
+  const isOffScope = kwOff.length >= 2 && kwDesign.length === 0;
+  if (isOffScope) signals.push(`off-scope ${kwOff.slice(0, 3).join(',')}`);
   if (isWorksTender) { score -= 28; signals.push(`works(${kwWorks.length}) no-design`); }
   else if (kwWorks.length) { score -= 5 * kwWorks.length; signals.push(`works- ${kwWorks.join(',')}`); }
  
@@ -183,6 +196,7 @@ export function scoreOpportunity(opp) {
   if (!anyPositive && (cpvNeg.length || kwNeg.length || isWorksTender)) tier = 'excluded';
   // A build tender shouldn't ride building-type keywords up to high/medium.
   if (isWorksTender && (tier === 'high' || tier === 'medium')) tier = 'low';
+  if (isOffScope) tier = 'excluded'; // MEP/utility/grounds with no design role
  
   // "Major" = worth an active alert, not just a dashboard row.
   const is_major =
@@ -216,16 +230,21 @@ export function scoreOpportunity(opp) {
   const concludedStage =
     /í fullum gangi|stendur (nú )?yfir|fyrsta skóflustung|skóflustung\w* (var )?tekin|framkvæmdir (eru )?hafnar|framkvæmdir hófust|langt komin|langt komið|nær tilbúin|er tilbúin|fullbúin|tekið í notkun|vígð|vígt|vígsla|samdi við|samningur undirritaður|verksamningur|gengið til samninga|reyndist lægstbjóðandi|lægstbjóðandi í útboði|var boðið út|fær samning|fékk samning|framkvæmdum ljúk|framkvæmdum lýkur/i.test(text);
 
-  const editorialSource = opp.notice_type === 'news' || opp.notice_type === 'planning';
- 
+// Editorial commentary, not a live bid: a project being debated, cancelled,
+  // deemed too costly, or a planning inquiry/decision outcome being reported.
+  const editorialVeto =
+    /óraunhæf|aldrei að veruleika|of dýr|of dýrt|fram úr áætlun|hætt við|harðlega gagnrýnt|gagnrýnd|hefur verið neitað|var (synjað|hafnað|neitað)|synjað um|skipulagsfulltrúi (gaf|féllst|hafnaði|synjaði)|umsögn skipulagsfulltrúa/i.test(text);
+
+  const editorialSource = opp.notice_type === 'news' || opp.notice_type === 'planning'; 
   let kind;
   if (editorialSource) {
     // A live invitation always wins; otherwise a concluded/underway/finished
     // project is news even when lead or CPV signals match.
-    const promote = strategic && !closedCase && (invitesTender || !concludedStage);
+    const promote = strategic && !closedCase && (invitesTender || (!concludedStage && !editorialVeto));
     kind = promote ? 'opportunity' : 'news';
     if (kind === 'opportunity') signals.push('promoted-from-feed');
     else if (concludedStage) signals.push('past-stage');
+    else if (editorialVeto) signals.push('editorial');
   } else {
     kind = (kwNoise.length && !strategic) ? 'news' : 'opportunity';
   }
