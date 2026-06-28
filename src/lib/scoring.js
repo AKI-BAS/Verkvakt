@@ -210,13 +210,22 @@ export function scoreOpportunity(opp) {
   const closedCase =
     (opp.raw && /lokið/i.test(String(opp.raw.stada ?? ''))) ||
     /lokið/i.test(String(opp.description ?? ''));
- 
+
+  // Project already awarded / underway / finished — the bid is gone, so it's
+  // news even if development lead words (niðurrif, uppbygging…) match.
+  const concludedStage =
+    /í fullum gangi|stendur (nú )?yfir|fyrsta skóflustung|skóflustung\w* (var )?tekin|framkvæmdir (eru )?hafnar|framkvæmdir hófust|langt komin|langt komið|nær tilbúin|er tilbúin|fullbúin|tekið í notkun|vígð|vígt|vígsla|samdi við|samningur undirritaður|verksamningur|gengið til samninga|reyndist lægstbjóðandi|lægstbjóðandi í útboði|var boðið út|fær samning|fékk samning|framkvæmdum ljúk|framkvæmdum lýkur/i.test(text);
+
   const editorialSource = opp.notice_type === 'news' || opp.notice_type === 'planning';
  
   let kind;
   if (editorialSource) {
-    kind = (strategic && !closedCase) ? 'opportunity' : 'news';
+    // A live invitation always wins; otherwise a concluded/underway/finished
+    // project is news even when lead or CPV signals match.
+    const promote = strategic && !closedCase && (invitesTender || !concludedStage);
+    kind = promote ? 'opportunity' : 'news';
     if (kind === 'opportunity') signals.push('promoted-from-feed');
+    else if (concludedStage) signals.push('past-stage');
   } else {
     kind = (kwNoise.length && !strategic) ? 'news' : 'opportunity';
   }
