@@ -41,8 +41,10 @@
   /* ── header ── */
   header{border-bottom:1px solid var(--ink); position:sticky; top:0; background:var(--paper); z-index:5}
   .masthead{display:flex; align-items:baseline; justify-content:space-between; gap:16px; padding:22px 0 14px}
-  .brand{display:flex; align-items:baseline; gap:14px}
-  .brand h1{font-size:21px; font-weight:600; letter-spacing:-.02em; margin:0}
+  .brand{display:flex; align-items:baseline; gap:14px; cursor:pointer; user-select:none; border-radius:2px}
+  .brand h1{font-size:21px; font-weight:600; letter-spacing:-.02em; margin:0; transition:color .12s}
+  .brand:hover h1{color:var(--accent)}
+  .brand:focus-visible{outline:2px solid var(--accent); outline-offset:4px}
   .brand .sub{font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted)}
   .summary{font-size:12px; letter-spacing:.04em; color:var(--muted); text-align:right}
   .head-right{display:flex; align-items:center; gap:16px}
@@ -69,6 +71,12 @@
   .seg button:last-child{border-right:0}
   .seg button[aria-pressed=true]{background:var(--ink); color:var(--paper)}
   .seg button:focus-visible{outline:2px solid var(--accent); outline-offset:-2px}
+  /* refresh button — reuses .seg shell, icon only */
+  #refreshBtn{font-size:14px; line-height:1; padding:7px 12px; color:var(--muted)}
+  #refreshBtn:hover{color:var(--ink)}
+  #refreshBtn .ic{display:inline-block}
+  #refreshBtn.spin .ic{animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
 
   /* ── list ── */
   .list{padding:0 0 80px}
@@ -93,6 +101,7 @@
   .meta .tag{text-transform:uppercase}
   .meta .src{color:var(--accent)}
   .meta .dot{color:var(--line)}
+  .meta .pub{color:var(--faint)}
   .badge{display:inline-block; font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--urgent); border:1px solid var(--urgent); border-radius:2px; padding:1px 5px; margin-left:2px}
 
   .end{text-align:right; min-width:96px; padding-top:2px}
@@ -102,6 +111,7 @@
   .dl b{font-weight:500; color:var(--ink)}
   .dl.soon b{color:var(--urgent)}
   .dl.open{color:var(--faint)}
+  .dl-date{font-size:10.5px; color:var(--faint); margin-top:2px; letter-spacing:.02em}
 
   /* ── states ── */
   .state{padding:64px 0; text-align:center; color:var(--muted)}
@@ -112,8 +122,8 @@
 
   @media (max-width:620px){
     .row{grid-template-columns:auto 1fr; gap:12px}
-    .end{grid-column:2; text-align:left; margin-top:8px; display:flex; gap:16px; align-items:baseline}
-    .dl{margin-top:0}
+    .end{grid-column:2; text-align:left; margin-top:8px; display:flex; gap:16px; align-items:baseline; flex-wrap:wrap}
+    .dl,.dl-date{margin-top:0}
     .masthead{flex-direction:column; align-items:flex-start; gap:8px}
     .summary{text-align:left}
     .head-right{width:100%; justify-content:space-between}
@@ -125,7 +135,7 @@
 <header>
   <div class="wrap">
     <div class="masthead">
-      <div class="brand">
+      <div class="brand" id="brandRefresh" role="button" tabindex="0" title="Refresh data" aria-label="Verkvakt — click to refresh">
         <h1>Verkvakt</h1>
         <span class="sub">opportunity radar</span>
       </div>
@@ -146,6 +156,13 @@
         <button data-kind="opportunity" aria-pressed="true">Opportunities</button>
         <button data-kind="news">News</button>
         <button data-kind="all">All</button>
+      </div>
+      <div class="seg" id="sortSeg" role="group" aria-label="Sort order">
+        <button data-sort="relevance" aria-pressed="true">Relevance</button>
+        <button data-sort="newest">Newest</button>
+      </div>
+      <div class="seg" id="refreshSeg">
+        <button id="refreshBtn" aria-label="Refresh data" title="Refresh data"><span class="ic">↻</span></button>
       </div>
     </div>
   </div>
@@ -169,27 +186,27 @@ const SUPABASE_ANON = window.VERKVAKT_CONFIG?.SUPABASE_ANON || "";
 const SAMPLE = [
   { source:'competitions', title:'Hönnunarsamkeppni um endurhönnun Grófarhúss – framtíðarbókasafn miðborgarinnar',
     buyer:'Reykjavíkurborg', cpv:['71200000'], notice_type:'competition',
-    url:'https://reykjavik.is/en/grofarhus', deadline_at:daysFromNow(9), est_value:null, tier:'high', score:72, is_major:true,
+    url:'https://reykjavik.is/en/grofarhus', published_at:daysFromNow(-6), deadline_at:daysFromNow(9), est_value:null, tier:'high', score:72, is_major:true,
     signals:['cpv+ 71200000','competition'] },
   { source:'ted', title:'Iceland-Reykjavík: Architectural and related services — new upper-secondary school',
     buyer:'Framkvæmdasýslan – Ríkiseignir (FSRE)', cpv:['71221000','71240000'], notice_type:'pin',
-    url:'https://ted.europa.eu/en/notice/88826-2021', deadline_at:daysFromNow(41), est_value:180000000, tier:'high', score:68, is_major:true,
+    url:'https://ted.europa.eu/en/notice/88826-2021', published_at:daysFromNow(-20), deadline_at:daysFromNow(41), est_value:180000000, tier:'high', score:68, is_major:true,
     signals:['cpv+ 71221000,71240000','value≥50M'] },
   { source:'competitions', title:'Forval – þverfagleg teymi, uppbygging og skipulag átta byggingarreita við sjávarsíðuna',
     buyer:'Fasteignaþróunarfélagið Spilda ehf', cpv:[], notice_type:'competition',
-    url:'https://fila.is/category/samkeppnir/asamkeppnir/', deadline_at:daysFromNow(23), est_value:null, tier:'high', score:58,
+    url:'https://fila.is/category/samkeppnir/asamkeppnir/', published_at:daysFromNow(-12), deadline_at:daysFromNow(23), est_value:null, tier:'high', score:58,
     signals:['kw+ skipulag,forval','competition'] },
   { source:'utbodsvefur', title:'Innanhússhönnun og rýmisskipulag — endurnýjun skrifstofuhúsnæðis',
     buyer:'Sveitarfélag', cpv:['79932000'], notice_type:'contract',
-    url:'https://utbodsvefur.is', deadline_at:daysFromNow(5), est_value:14000000, tier:'medium', score:34,
+    url:'https://utbodsvefur.is', published_at:daysFromNow(-3), deadline_at:daysFromNow(5), est_value:14000000, tier:'medium', score:34,
     signals:['cpv+ 79932000','kw+ innanhúss','closing≤7d'] },
   { source:'ted', title:'Iceland-Akureyri: Landscape architectural services — public realm masterplan',
     buyer:'Akureyrarbær', cpv:['71400000'], notice_type:'cn-standard',
-    url:'https://ted.europa.eu/en/notice/-/detail/408098-2021', deadline_at:daysFromNow(31), est_value:42000000, tier:'medium', score:48,
+    url:'https://ted.europa.eu/en/notice/-/detail/408098-2021', published_at:daysFromNow(-15), deadline_at:daysFromNow(31), est_value:42000000, tier:'medium', score:48,
     signals:['cpv+ 71400000','kw+ landslag'] },
   { source:'utbodsvefur', title:'Raflagnahönnun og endurnýjun raflagna í eldra mannvirki',
     buyer:'Ríkisstofnun', cpv:['45310000'], notice_type:'contract',
-    url:'https://utbodsvefur.is', deadline_at:daysFromNow(18), est_value:60000000, tier:'excluded', score:-22,
+    url:'https://utbodsvefur.is', published_at:daysFromNow(-30), deadline_at:daysFromNow(18), est_value:60000000, tier:'excluded', score:-22,
     signals:['cpv- 45310000','kw- raflagnir'] },
 ];
 
@@ -198,13 +215,17 @@ function daysFromNow(n){ return new Date(Date.now()+n*86400000).toISOString(); }
 // ── state ──
 let DATA = [];
 let DEMO = false;
-const filters = { q:'', src:'all', tier:'all', kind:'opportunity' };
+const filters = { q:'', src:'all', tier:'all', kind:'opportunity', sort:'relevance' };
 const TIER_RANK = { excluded:0, low:1, medium:2, high:3 };
 
 let DB = null;
 async function load(){
-  if (SUPABASE_URL && SUPABASE_ANON && window.supabase){
-    try {
+  const btn = document.getElementById('refreshBtn');
+  btn && btn.classList.add('spin');
+  const sum = document.getElementById('summary');
+  if (sum && DATA.length) sum.textContent = 'refreshing…';
+  try {
+    if (SUPABASE_URL && SUPABASE_ANON && window.supabase){
       DB = DB || window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
       // Filter by kind on the server so we never blow past Supabase's 1000-row cap.
       // The default 'opportunity' slice is small; 'news' fetches its own slice.
@@ -215,12 +236,13 @@ async function load(){
       DATA = data || [];
       render();
       return;
-    } catch (e){
-      renderError(e.message || String(e));
-      return;
     }
+    DEMO = true; DATA = SAMPLE; render();
+  } catch (e){
+    renderError(e.message || String(e));
+  } finally {
+    btn && btn.classList.remove('spin');
   }
-  DEMO = true; DATA = SAMPLE; render();
 }
 
 function fmtVal(v){
@@ -234,13 +256,27 @@ function deadline(iso){
   if (d < 0) return {txt:'closed', cls:'open'};
   return {txt:`<b>${d}</b> day${d===1?'':'s'}`, cls: d<=7?'soon':''};
 }
+// Absolute calendar date, e.g. "12 Jun" (year shown only when it isn't this year).
+function fmtDate(iso){
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (isNaN(d)) return null;
+  const sameYear = d.getFullYear() === new Date().getFullYear();
+  return d.toLocaleDateString('en-GB',
+    sameYear ? {day:'numeric',month:'short'} : {day:'numeric',month:'short',year:'numeric'});
+}
+// Sort key for "newest": published date, falling back to first-seen; undated sink last.
+function pubTime(o){
+  const t = Date.parse(o.published_at || o.first_seen_at || '');
+  return isNaN(t) ? -Infinity : t;
+}
 function esc(s){ return (s||'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 const SRC_LABEL = { ted:'TED', competitions:'Competition', utbodsvefur:'Útboðsvefur' };
 
 function passes(o){
   if (filters.src!=='all' && o.source!==filters.src) return false;
   if (filters.tier!=='all' && TIER_RANK[o.tier] < TIER_RANK[filters.tier]) return false;
-  if (filters.kind!=='all' && (o.kind||'opportunity')!==filters.kind) return false;  // ← add this
+  if (filters.kind!=='all' && (o.kind||'opportunity')!==filters.kind) return false;
   if (filters.q){
     const hay = (o.title+' '+(o.buyer||'')+' '+(o.cpv||[]).join(' ')).toLowerCase();
     if (!hay.includes(filters.q.toLowerCase())) return false;
@@ -249,8 +285,10 @@ function passes(o){
 }
 
 function render(){
-  const rows = DATA.filter(passes).sort((a,b)=>
-    (b.is_major?1:0)-(a.is_major?1:0) || b.score-a.score);
+  const rows = DATA.filter(passes).sort((a,b)=>{
+    if (filters.sort === 'newest') return pubTime(b) - pubTime(a);
+    return (b.is_major?1:0)-(a.is_major?1:0) || b.score-a.score;
+  });
 
   const open = DATA.length;
   const soon = DATA.filter(o=>{const dl=deadline(o.deadline_at); return dl.cls==='soon';}).length;
@@ -267,6 +305,8 @@ function render(){
   list.innerHTML = rows.map(o=>{
     const v = fmtVal(o.est_value), dl = deadline(o.deadline_at);
     const cpv = (o.cpv||[]).slice(0,2).join(' · ');
+    const pub = fmtDate(o.published_at);
+    const dueDate = fmtDate(o.deadline_at);
     return `<article class="row">
       <div class="mark" data-tier="${o.tier}" title="relevance: ${o.tier} (${o.score})">
         <i></i><i></i><i></i>
@@ -278,11 +318,13 @@ function render(){
           ${o.buyer?`<span class="dot">/</span><span>${esc(o.buyer)}</span>`:''}
           ${cpv?`<span class="dot">/</span><span>${esc(cpv)}</span>`:''}
           ${o.notice_type?`<span class="dot">/</span><span class="tag">${esc(o.notice_type)}</span>`:''}
+          ${pub?`<span class="dot">/</span><span class="pub">Published ${pub}</span>`:''}
         </div>
       </div>
       <div class="end mono">
         <div class="val ${v.none?'none':''}">${v.txt}</div>
         <div class="dl ${dl.cls}">${dl.txt}</div>
+        ${dueDate?`<div class="dl-date">closes ${dueDate}</div>`:''}
       </div>
     </article>`;
   }).join('');
@@ -315,10 +357,19 @@ function wireSeg(id, key, after){
     after();
   });
 }
-// src/tier/q filter the already-fetched slice client-side -> render().
+// src/sort/q filter or reorder the already-fetched slice client-side -> render().
 // kind selects a different server-side slice -> load() re-fetches.
 wireSeg('srcSeg','src', render);
 wireSeg('kindSeg','kind', load);
+wireSeg('sortSeg','sort', render);
+
+// ── refresh: the ↻ button and the Verkvakt wordmark both re-fetch from Supabase ──
+document.getElementById('refreshBtn').addEventListener('click', load);
+const brand = document.getElementById('brandRefresh');
+brand.addEventListener('click', load);
+brand.addEventListener('keydown', e=>{
+  if (e.key==='Enter' || e.key===' '){ e.preventDefault(); load(); }
+});
 
 load();
 </script>
