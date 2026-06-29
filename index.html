@@ -113,6 +113,15 @@
   .dl.open{color:var(--faint)}
   .dl-date{font-size:10.5px; color:var(--faint); margin-top:2px; letter-spacing:.02em}
 
+  /* signals: why this scored as it did — auditability on the card itself */
+  .sigs{margin-top:7px; display:flex; flex-wrap:wrap; gap:5px}
+  .sig{font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:10px; line-height:1.4;
+       letter-spacing:.01em; padding:1px 6px; border:1px solid var(--line);
+       border-radius:2px; color:var(--faint); white-space:nowrap}
+  .sig.pos{color:var(--accent); border-color:var(--line)}
+  .sig.neg{color:var(--urgent); border-color:var(--line)}
+  .sig.flag{color:var(--muted); border-style:dashed}
+
   /* ── states ── */
   .state{padding:64px 0; text-align:center; color:var(--muted)}
   .state h3{font-weight:500; color:var(--ink); margin:0 0 6px}
@@ -272,6 +281,21 @@ function pubTime(o){
   return isNaN(t) ? -Infinity : t;
 }
 function esc(s){ return (s||'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+// Render the scorer's `signals` as chips so every card explains its own tier.
+// Polarity is read from the signal text: '+' / boosts are positive, '-' / works
+// / noise are penalties, and the rest (news-capped, editorial, off-scope,
+// past-stage, competition…) are neutral flags.
+function sigChips(signals){
+  if (!Array.isArray(signals) || !signals.length) return '';
+  const NEG = /^(cpv-|kw-|noise|works|off-scope|news-capped)/;
+  const POS = /(\+|^competition$|^value|^closing|^promoted)/;
+  const chips = signals.map(s=>{
+    const cls = NEG.test(s) ? 'neg' : (POS.test(s) ? 'pos' : 'flag');
+    return `<span class="sig ${cls}">${esc(s)}</span>`;
+  }).join('');
+  return `<div class="sigs">${chips}</div>`;
+}
 const SRC_LABEL = { ted:'TED', competitions:'Competition', utbodsvefur:'Útboðsvefur' };
 
 function passes(o){
@@ -321,6 +345,7 @@ function render(){
           ${o.notice_type?`<span class="dot">/</span><span class="tag">${esc(o.notice_type)}</span>`:''}
           ${pub?`<span class="dot">/</span><span class="pub">Published ${pub}</span>`:''}
         </div>
+        ${sigChips(o.signals)}
       </div>
       <div class="end mono">
         <div class="val ${v.none?'none':''}">${v.txt}</div>

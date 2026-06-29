@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "run-now": "wrangler dev --test-scheduled"
+    "run-now": "wrangler dev --test-scheduled",
+    "rescore": "node scripts/rescore.mjs",
+    "rescore:apply": "node scripts/rescore.mjs --apply"
   },
   "devDependencies": {
     "wrangler": "^3.90.0"

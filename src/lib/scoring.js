@@ -108,7 +108,7 @@ const KW_OFFSCOPE = [
   'trjáfelling','grisjun','hirðing grænna','hirðingu grænna','grænna svæða','kurlun',
   'stubbatæting','trjáklifur','kjarrsögun','garðyrkja','sláttur','gróðursetning','skóglend',
 ];
-
+ 
 function fold(s = '') {
   return s
     .toLowerCase()
@@ -224,17 +224,17 @@ export function scoreOpportunity(opp) {
   const closedCase =
     (opp.raw && /lokið/i.test(String(opp.raw.stada ?? ''))) ||
     /lokið/i.test(String(opp.description ?? ''));
-
+ 
   // Project already awarded / underway / finished — the bid is gone, so it's
   // news even if development lead words (niðurrif, uppbygging…) match.
   const concludedStage =
     /í fullum gangi|stendur (nú )?yfir|fyrsta skóflustung|skóflustung\w* (var )?tekin|framkvæmdir (eru )?hafnar|framkvæmdir hófust|langt komin|langt komið|nær tilbúin|er tilbúin|fullbúin|tekið í notkun|vígð|vígt|vígsla|samdi við|samningur undirritaður|verksamningur|gengið til samninga|reyndist lægstbjóðandi|lægstbjóðandi í útboði|var boðið út|fær samning|fékk samning|framkvæmdum ljúk|framkvæmdum lýkur/i.test(text);
-
+ 
 // Editorial commentary, not a live bid: a project being debated, cancelled,
   // deemed too costly, or a planning inquiry/decision outcome being reported.
   const editorialVeto =
     /óraunhæf|aldrei að veruleika|of dýr|of dýrt|fram úr áætlun|hætt við|harðlega gagnrýnt|gagnrýnd|hefur verið neitað|var (synjað|hafnað|neitað)|synjað um|skipulagsfulltrúi (gaf|féllst|hafnaði|synjaði)|umsögn skipulagsfulltrúa/i.test(text);
-
+ 
   const editorialSource = opp.notice_type === 'news' || opp.notice_type === 'planning'; 
   let kind;
   if (editorialSource) {
@@ -249,5 +249,20 @@ export function scoreOpportunity(opp) {
     kind = (kwNoise.length && !strategic) ? 'news' : 'opportunity';
   }
  
-  return { score, tier, signals, is_major, kind };
+  // ── Actionability gate ─────────────────────────────────────────────────────
+  // Tier above measures topical relevance. But a NEWS item is intel, not a
+  // biddable lead, however architecture-dense it is. It belongs in the News
+  // lane — never atop the opportunity ranking. So cap news prominence here
+  // (demote, don't exclude: cancellation/closed-case stories are still useful
+  // forward signals). The raw score is preserved in the signal for audit.
+  if (kind === 'news' && (tier === 'high' || tier === 'medium')) {
+    signals.push(`news-capped(was ${tier}, score ${score})`);
+    tier = 'low';
+  }
+ 
+  // A surfaced opportunity should never out-rank on a pure off-scope/works read
+  // either — already handled above for tiers, but make is_major honest about kind.
+  const is_major_final = is_major && kind === 'opportunity';
+ 
+  return { score, tier, signals, is_major: is_major_final, kind };
 }
